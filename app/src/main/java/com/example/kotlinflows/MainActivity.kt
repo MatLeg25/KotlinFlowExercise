@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: MainViewModel by viewModels { MainViewModel.Factory }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KotlinFlowsTheme {
-                val viewModel = viewModel<MainViewModel>()
+                val viewModel = viewModel<MainViewModel>(factory = MainViewModel.Factory)
                 val time = viewModel.countDownFlow.collectAsState(initial = 10)
                 val count = viewModel.stateFlow.collectAsState(initial = 0)
 
