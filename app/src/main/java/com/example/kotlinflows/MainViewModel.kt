@@ -3,7 +3,11 @@ package com.example.kotlinflows
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
@@ -21,6 +25,7 @@ import kotlinx.coroutines.launch
 
 class MainViewModel: ViewModel() {
 
+    //cold flow (if no collectors - do nothing)
     val countDownFlow = flow<Int> {
         val startingValue = 10
         var currentValue = startingValue
@@ -32,11 +37,33 @@ class MainViewModel: ViewModel() {
         }
     }
 
+    //hot flow (even if no collectors - do updates)
+    private val _stateFlow = MutableStateFlow(0)
+    val stateFlow = _stateFlow.asStateFlow()
+
+    //by default used for one time events
+    private val _sharedFlow = MutableSharedFlow<Int>(replay = 5)
+    val sharedFlow = _sharedFlow.asSharedFlow()
+
     init {
         collectFlow12()
+
+        squareNumber(3)
+        viewModelScope.launch {
+            sharedFlow.collect {
+                delay(2000L)
+                println("FIRST FLOW: The received number is $it")
+            }
+        }
+        viewModelScope.launch {
+            sharedFlow.collect {
+                delay(3000L)
+                println("SECOND FLOW: The received number is $it")
+            }
+        }
     }
 
-
+//PART1:
 // SIMPLE OPERATIONS
     private fun collectFlow1() {
         viewModelScope.launch {
@@ -78,6 +105,7 @@ class MainViewModel: ViewModel() {
     }
 
 
+//PART2:
 // TERMINAL FLOW OPERATORS (count, reduce, fold)
     private fun collectFlow5() {
         viewModelScope.launch {
@@ -234,4 +262,15 @@ class MainViewModel: ViewModel() {
         }
     }
 
+
+//PART3: StateFlow  & SharedFlow
+    fun incrementCounter() {
+        _stateFlow.value += 1
+    }
+
+    fun squareNumber(number: Int) {
+        viewModelScope.launch {
+            _sharedFlow.emit(number * number)
+        }
+    }
 }
